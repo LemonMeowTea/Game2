@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Memory Game</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        #digitDisplay {
+            font-size: 50px;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Digit Memory Game</h1>
+    <button id="startButton">Start Game</button>
+    <br>
+    <input style="width:200px; height:50px; font-size:30px"  type="text" id="userInput" placeholder="Enter sequence here..." disabled="true">
+    <div id="digitDisplay"></div>
+    <div id="resultOutput"></div>
+    
+
+    <script>
+        const totalQuestions = 10; // Total number of questions
+        let currentLength = 5; // Initial length of the digit sequence
+        let attempts = 0; // Count of incorrect attempts
+        let digitsSequence = []; // Store the sequence of digits
+        let currentIndex = 0; // Index for current digit in the sequence
+        let gameEnd = false; // To track if the game has ended
+        let userInput = '';
+        let enterLock = true;
+        let time = 0;
+        let startClock = false;
+
+
+        $("#startButton").click(() => {
+            startGame();
+        });
+
+        function startGame() {
+            gameEnd = false; // Reset game state
+            attempts = 0; // Reset attempts
+            currentLength = 5; // Reset length
+            resultOutput.textContent = ""; // Clear results
+            digitsSequence = []; // Clear the digit sequence
+            getNextSequence(); // Start the first sequence
+            
+            startClock = false;
+            enterLock = true;
+            time = 0;
+            userInput = '';
+        }
+
+        function getNextSequence() {
+            if (attempts >= 3) {
+                endGame(); // End game if too many incorrect attempts
+                return;
+            }
+
+            // Generate random digits sequence
+            digitsSequence = [];
+            for (let i = 0; i < currentLength; i++) {
+                digitsSequence.push(Math.floor(Math.random() * 10)); // Digits from 0 to 9
+            }
+
+            // Display the digits one by one
+            displayDigits();
+        }
+
+        function displayDigits() {
+            currentIndex = 0; // Reset index to start displaying
+            $("#digitDisplay").text("Start"); // Clear previous digits
+            setTimeout(() => {
+                showNextDigit(); // Start showing digits    
+            }, 1000);
+        }
+
+        function showNextDigit() {
+            if (currentIndex < digitsSequence.length) {
+                $("#digitDisplay").text(digitsSequence[currentIndex]); // Show current digit
+                currentIndex++;
+                setTimeout(bufferTime, 200); // Show next digit after 0.2 seconds
+            } else {
+                // After displaying the sequence, wait for user input
+                $("#digitDisplay").text("End")
+                enterLock = false;
+                startClock = true;
+                $("#userInput").prop("disabled", false).focus(); 
+                timer();
+            }
+
+        }
+
+        function bufferTime(){
+            $("#digitDisplay").text("");
+            setTimeout(showNextDigit, 500);
+        }
+        
+
+        $("#userInput").on("keypress", (event) => {
+            if (event.key === "Enter" && !gameEnd && !enterLock) { // If Enter is pressed and game is ongoing
+                const userInput = $("#userInput").val(); // Get the user's input
+                
+                checkAnswer(userInput); // Check input against generated sequence
+                $("#userInput").val(''); // Clear the input for the next entry
+                enterLock = true;
+                startClock = false
+                $("#userInput").prop("disabled", true); 
+            }
+        });
+
+        function timer(){
+            if(startClock){
+                time+=100;
+                setTimeout(timer,100);
+            }
+        }
+        
+        function checkAnswer(userInput) {
+            if (userInput === digitsSequence.join('')) {
+                resultOutput.textContent = "Correct! Next sequence.";
+                currentLength++; // Increase the length of the sequence for the next round
+                getNextSequence(); // Generate the next sequence
+            } else {
+                attempts++;
+                resultOutput.textContent = `Wrong! You've made ${attempts} incorrect attempt(s).`;
+                currentLength = Math.max(1, currentLength - 1); // Decrease sequence length, min 1
+                getNextSequence(); // Generate the next sequence
+            }
+        }
+
+        function endGame() {
+            gameEnd = true;
+            $("#digitDisplay").text(""); // Clear the display
+            resultOutput.textContent = "Game Over! You have reached " + currentLength + " length question with average guess time" + Math.floor(time/1000) + "." + time%1000 + "s per question";
+
+        }
+    </script>
+</body>
+</html>
